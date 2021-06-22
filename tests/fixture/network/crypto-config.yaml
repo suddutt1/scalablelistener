@@ -1,0 +1,34 @@
+OrdererOrgs:
+- CA:
+    Country: ""
+    Locality: ""
+    OrganizationalUnit: ""
+    PostalCode: ""
+    Province: ""
+    StreetAddress: ""
+  Domain: testfabric.net
+  Name: Orderer
+  Specs:
+  - SANS:
+    - localhost
+  Template:
+    Count: 1
+    Hostname: orderer{{.Index}}
+PeerOrgs:
+- CA:
+    Country: ""
+    Hostname: ca
+    Locality: ""
+    OrganizationalUnit: ""
+    PostalCode: ""
+    Province: ""
+    StreetAddress: ""
+  Domain: testbuyer.com
+  EnableNodeOUs: true
+  Name: Buyer
+  Template:
+    Count: 1
+    SANS:
+    - localhost
+  Users:
+    Count: 1

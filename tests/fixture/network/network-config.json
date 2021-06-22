@@ -1,0 +1,33 @@
+
+{
+    "fabricVersion":"2.2.0",
+    "orderers":{
+        "name" :"Orderer",
+        "mspID":"OrdererMSP",
+        "domain":"testfabric.net",
+        "ordererHostname":"orderer",
+        "SANS":"localhost",
+        "type":"raft",
+        "haCount":1
+    },
+    "addCA":"true",
+    "orgs":[
+        { 
+            "name" :"Buyer",
+            "domain":"testbuyer.com",
+            "mspID":"BuyerMSP",
+            "SANS":"localhost",
+            "peerCount":1,
+            "userCount":1
+        }
+        ],
+    
+    "consortium":"SupplyChainConsortium",
+    "channels" :[
+                    {"channelName":"sample","orgs":["Buyer"] }
+                ],
+    "chaincodes":[{"channelName":"sample","ccid":"samplecc","version":"1.0","src":"github.com/samplecc","participants":["Buyer"]}]            
+                
+}
+
+

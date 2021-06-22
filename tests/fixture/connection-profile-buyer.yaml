@@ -1,0 +1,132 @@
+version: 1.0.0
+client:
+  organization: buyer
+  logging:
+    level: info
+  peer:
+    timeout:
+      connection: 100s
+      discovery:
+        greylistExpiry: 100s
+      response: 600s
+  orderer:
+    timeout:
+      connection: 100s
+      response: 600s
+  global:
+    timeout:
+      execute: 180s
+      query: 180s
+      resmgmt: 180s
+  cryptoconfig:
+    path: /home/suddutt1/assets/hyperledger/eventlistener/tests/fixture/network/crypto-config
+  credentialStore:
+    cryptoStore:
+      path: ./tmpbuyermsp/msp
+    path: ./tmpbuyermsp/state-store
+  BCCSP:
+    security:
+      default:
+        provider: SW
+      enabled: true
+      hashAlgorithm: SHA2
+      level: 256
+      softVerify: false
+  tlsCerts:
+    systemCertPool: false
+channels:
+  sample:
+    orderers:
+    - orderer0.testfabric.net
+    peers:
+      peer0.testbuyer.com:
+        chaincodeQuery: true
+        endorsingPeer: true
+        eventSource: true
+        ledgerQuery: true
+    policies:
+      discovery:
+        maxTargets: 1
+        retryOpts:
+          attempts: 2
+          backoffFactor: 2
+          initialBackoff: 500ms
+          maxBackoff: 5s
+      eventService:
+        balancer: Random
+        blockHeightLagThreshold: 5
+        peerMonitorPeriod: 6s
+        reconnectBlockHeightLagThreshold: 8
+        resolverStrategy: PreferOrg
+      queryChannelConfig:
+        maxTargets: 1
+        minResponses: 1
+        retryOpts:
+          attempts: 2
+          backoffFactor: 1
+          initialBackoff: 500ms
+          maxBackoff: 5s
+orderers:
+  orderer0.testfabric.net:
+    url: orderer0.testfabric.net:7050
+    grpcOptions:
+      allow-insecure: false
+      fail-fast: false
+      keep-alive-permit: false
+      keep-alive-time: 20s
+      keep-alive-timeout: 100s
+      ssl-target-name-override: orderer0.testfabric.net
+    tlsCACerts:
+      path: /home/suddutt1/assets/hyperledger/eventlistener/tests/fixture/network/crypto-config/ordererOrganizations/testfabric.net/tlsca/tlsca.testfabric.net-cert.pem
+peers:
+  peer0.testbuyer.com:
+    grpcOptions:
+      allow-insecure: false
+      fail-fast: false
+      keep-alive-permit: false
+      keep-alive-time: 20s
+      keep-alive-timeout: 100s
+      ssl-target-name-override: peer0.testbuyer.com
+    tlsCACerts:
+      path: /home/suddutt1/assets/hyperledger/eventlistener/tests/fixture/network/crypto-config/peerOrganizations/testbuyer.com/tlsca/tlsca.testbuyer.com-cert.pem
+organizations:
+  buyer:
+    mspid: BuyerMSP
+    cryptoPath: peerOrganizations/testbuyer.com/users/{username}@testbuyer.com/msp
+    certificateAuthorities:
+    - buyer-ca
+    peers:
+    - peer0.testbuyer.com
+  ordererorg:
+    mspID: OrdererMSP
+    cryptoPath: ordererOrganizations/testfabric.net/users/{username}@testfabric.net/msp
+certificateAuthorities:
+  buyer-ca:
+    url: https://ca.testbuyer.com:7054
+    httpsOptions:
+      verify: false
+    tlsCACerts:
+      path: /home/suddutt1/assets/hyperledger/eventlistener/tests/fixture/network/crypto-config/peerOrganizations/testbuyer.com/ca/ca.testbuyer.com-cert.pem
+    caName: BuyerCA
+    registrar:
+      enrollId: admin
+      enrollSecret: adminpw
+entityMatchers:
+  certificateAuthority:
+  - mappedHost: ca.testbuyer.com
+    pattern: ca.testbuyer.com
+    sslTargetOverrideUrlSubstitutionExp: ca.testbuyer.com
+    urlSubstitutionExp: ca.testbuyer.com:7054
+  orderer:
+  - eventUrlSubstitutionExp: orderer0.testfabric.net:7050
+    mappedHost: orderer0.testfabric.net
+    pattern: orderer0.testfabric.net
+    sslTargetOverrideUrlSubstitutionExp: orderer0.testfabric.net
+    urlSubstitutionExp: orderer0.testfabric.net:7050
+  peer:
+  - eventUrlSubstitutionExp: peer0.testbuyer.com:7053
+    mappedHost: peer0.testbuyer.com
+    pattern: peer0.testbuyer.com
+    sslTargetOverrideUrlSubstitutionExp: peer0.testbuyer.com
+    urlSubstitutionExp: peer0.testbuyer.com:7051
+X-OrgCA: BuyerCA

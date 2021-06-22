@@ -1,0 +1,11 @@
+tests/fixture/network/*.tx
+tests/fixture/network/*.tx
+tests/fixture/network/bin
+tests/fixture/network/crypto-config
+tests/fixture/network/worldstate
+tests/fixture/network/ca-buyer
+tests/fixture/network/config
+tests/fixture/network/blocks
+tests/tmp*
+
+
