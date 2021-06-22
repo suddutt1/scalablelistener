@@ -2,21 +2,23 @@ package util
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/ledger/rwset"
+	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
+	"github.com/hyperledger/fabric-sdk-go/pkg/client/event"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/ledger"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/msp"
 	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/context"
 	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
 	"github.com/hyperledger/fabric-sdk-go/pkg/core/config"
+	"github.com/hyperledger/fabric-sdk-go/pkg/fab/events/deliverclient/seek"
 	"github.com/hyperledger/fabric-sdk-go/pkg/fabsdk"
 	"github.com/hyperledger/fabric/protoutil"
-
-	"github.com/hyperledger/fabric-protos-go/ledger/rwset"
-	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	"github.com/sirupsen/logrus"
 )
 
@@ -397,6 +399,51 @@ func (fu *FabricUtil) decodeBlockWithFilter(block *common.Block, filters ...stri
 	}
 
 	return &blockStructure
+}
+func (fu *FabricUtil) RegisterBlockLister(channelID, userID string, blockEventEmitter chan *BlockDetails, filters ...string) error {
+
+	clientChannelContext := fu.fabsdk.ChannelContext(channelID, fabsdk.WithUser(userID), fabsdk.WithOrg(fu.org))
+	eventClient, err := event.New(clientChannelContext, event.WithBlockEvents(), event.WithSeekType(seek.Newest))
+	if err != nil {
+		logger.Errorf("Unable to initilaize event client for channel %s userid %s", channelID, userID)
+		return err
+	}
+	blockEvtRegn, blockEvent, err := eventClient.RegisterFilteredBlockEvent()
+	if err != nil {
+		logger.Errorf("Block event registration failed channel %s userid %s", channelID, userID)
+		return err
+	}
+	defer eventClient.Unregister(blockEvtRegn)
+
+	isError := false
+	ccID := ""
+	if len(filters) > 0 {
+		ccID = filters[0]
+	}
+	eventFilters := make([]string, 0)
+	if len(filters) > 1 {
+		eventFilters = append(eventFilters, filters[1])
+	}
+	//Run the loop to dispatch the blocks
+	for !isError {
+		select {
+		case event, isOk := <-blockEvent:
+			if !isOk || event.FilteredBlock == nil {
+				logger.Errorf("Unexpected channel close for channel %s userID %s", channelID, userID)
+				isError = true
+			}
+			blockDetails, err := fu.GetBlockDetailsWithFilter(channelID, event.FilteredBlock.GetNumber(), ccID, eventFilters...)
+			if err != nil {
+				logger.Errorf("Blockdetails retrival error %v", err)
+
+			}
+			//Emit the blockde details for consumption
+			blockEventEmitter <- blockDetails
+		default:
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+	return fmt.Errorf("Unexpected_Channel_Close")
 }
 
 //Executes a transaction
